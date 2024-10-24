@@ -7,17 +7,15 @@ pygame.init()
 # Configuración de la ventana
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Julieta en el Ministerio evitando problemas")
+pygame.display.set_caption("Naves")
 
 # Cargar imagen de fondo
-
 fondo = pygame.image.load('fondo.png').convert()
 fondo = pygame.transform.scale(fondo, (WIDTH, HEIGHT))  # Escalar al tamaño de la ventana
 
 # Variables para el movimiento del fondo
 fondo_y1 = 0
 fondo_y2 = -HEIGHT  # Segunda copia del fondo, justo debajo
-
 fondo_speed = 3  # Velocidad del movimiento del fondo
 
 class Nave:
@@ -78,6 +76,27 @@ enemigo_velocidad = 3
 crear_enemigos_intervalo = 1000  # Cada 1 segundo
 pygame.time.set_timer(pygame.USEREVENT, crear_enemigos_intervalo)  # Generar evento
 
+# Inicializar puntaje y contador de enemigos perdidos
+puntaje = 0
+enemigos_perdidos = 0
+fuente = pygame.font.Font(None, 36)  # Fuente para el puntaje
+
+def generar_enemigo():
+    while True:
+        x = random.randint(0, WIDTH - 50)
+        y = random.randint(-50, -10)
+        nuevo_enemigo = Enemigo(x, y, enemigo_velocidad)
+        
+        # Verificar si el nuevo enemigo colisiona con algún enemigo existente
+        colision = False
+        for enemigo in enemigos:
+            if nuevo_enemigo.rect.colliderect(enemigo.rect):
+                colision = True
+                break
+        
+        if not colision:
+            return nuevo_enemigo  # Retornar el enemigo si no hay colisión
+
 # Bucle principal
 running = True
 while running:
@@ -107,8 +126,7 @@ while running:
                 proyectiles.append(nuevo_proyectil)
         if event.type == pygame.USEREVENT:  # Evento para crear enemigos
             for _ in range(random.randint(1, 3)):  # Generar entre 1 y 3 enemigos
-                x = random.randint(0, WIDTH - 50)
-                enemigo = Enemigo(x, random.randint(-50, -10), enemigo_velocidad)
+                enemigo = generar_enemigo()
                 enemigos.append(enemigo)
 
     keys = pygame.key.get_pressed()
@@ -127,6 +145,10 @@ while running:
         enemigo.mover()
         if enemigo.rect.top > HEIGHT:
             enemigos.remove(enemigo)
+            enemigos_perdidos += 1  # Incrementar el contador de enemigos perdidos
+            if enemigos_perdidos > 10:  # Verificar si se han perdido más de 10 enemigos
+                print("¡Juego Terminado! Se han perdido más de 10 enemigos.")
+                running = False  # Terminar el juego
 
     # Detección de colisiones entre proyectiles y enemigos
     for proyectil in proyectiles[:]:
@@ -134,6 +156,7 @@ while running:
             if proyectil.rect.colliderect(enemigo.rect):
                 proyectiles.remove(proyectil)  # Eliminar proyectil
                 enemigos.remove(enemigo)  # Eliminar enemigo
+                puntaje += 1  # Aumentar el puntaje
                 break
 
     # Detección de colisiones entre la nave y enemigos
@@ -153,9 +176,38 @@ while running:
     for enemigo in enemigos:
         enemigo.dibujar(screen)
 
+    # Mostrar puntaje
+    texto_puntaje = fuente.render(f'Puntaje: {puntaje}', True, (255, 255, 255))
+    screen.blit(texto_puntaje, (10, 10))
+
+    # Mostrar enemigos perdidos
+    texto_enemigos_perdidos = fuente.render(f'Enemigos Perdidos: {enemigos_perdidos}', True, (255, 255, 255))
+    screen.blit(texto_enemigos_perdidos, (10, 40))
+
     # Actualizar la pantalla
     pygame.display.flip()
     pygame.time.Clock().tick(60)
+
+# Mostrar mensaje de fin de juego
+def mostrar_mensaje_fin():
+    screen.fill((0, 0, 0))  # Limpiar la pantalla
+    texto_fin = fuente.render('¡Juego Terminado!', True, (255, 0, 0))
+    texto_puntaje_final = fuente.render(f'Puntaje Final: {puntaje}', True, (255, 255, 255))
+    texto_enemigos_perdidos_final = fuente.render(f'Enemigos Perdidos: {enemigos_perdidos}', True, (255, 255, 255))
+    
+    # Posicionar el texto en la pantalla
+    screen.blit(texto_fin, (WIDTH // 2 - texto_fin.get_width() // 2, HEIGHT // 2 - 50))
+    screen.blit(texto_puntaje_final, (WIDTH // 2 - texto_puntaje_final.get_width() // 2, HEIGHT // 2))
+    screen.blit(texto_enemigos_perdidos_final, (WIDTH // 2 - texto_enemigos_perdidos_final.get_width() // 2, HEIGHT // 2 + 50))
+    
+    pygame.display.flip()  # Actualizar la pantalla
+    pygame.time.delay(3000)  # Esperar 3 segundos
+
+# En el bucle principal, donde se verifica el fin del juego:
+if enemigos_perdidos > 10 or enemigo.rect.colliderect(nave.rect):
+    mostrar_mensaje_fin()  # Llamar a la función para mostrar el mensaje
+    running = False  # Terminar el juego
+
 
 # Salir de Pygame
 pygame.quit()

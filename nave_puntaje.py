@@ -7,17 +7,15 @@ pygame.init()
 # Configuración de la ventana
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Julieta en el Ministerio evitando problemas")
+pygame.display.set_caption("NAVEs")
 
 # Cargar imagen de fondo
-
 fondo = pygame.image.load('fondo.png').convert()
 fondo = pygame.transform.scale(fondo, (WIDTH, HEIGHT))  # Escalar al tamaño de la ventana
 
 # Variables para el movimiento del fondo
 fondo_y1 = 0
 fondo_y2 = -HEIGHT  # Segunda copia del fondo, justo debajo
-
 fondo_speed = 3  # Velocidad del movimiento del fondo
 
 class Nave:
@@ -78,6 +76,10 @@ enemigo_velocidad = 3
 crear_enemigos_intervalo = 1000  # Cada 1 segundo
 pygame.time.set_timer(pygame.USEREVENT, crear_enemigos_intervalo)  # Generar evento
 
+# Inicializar puntaje
+puntaje = 0
+fuente = pygame.font.Font(None, 36)  # Fuente para el puntaje
+
 # Bucle principal
 running = True
 while running:
@@ -134,6 +136,7 @@ while running:
             if proyectil.rect.colliderect(enemigo.rect):
                 proyectiles.remove(proyectil)  # Eliminar proyectil
                 enemigos.remove(enemigo)  # Eliminar enemigo
+                puntaje += 1  # Aumentar el puntaje
                 break
 
     # Detección de colisiones entre la nave y enemigos
@@ -153,9 +156,12 @@ while running:
     for enemigo in enemigos:
         enemigo.dibujar(screen)
 
+    # Mostrar puntaje
+    texto_puntaje = fuente.render(f'Puntaje: {puntaje}', True, (255, 255, 255))
+    screen.blit(texto_puntaje, (10, 10))
+
     # Actualizar la pantalla
     pygame.display.flip()
     pygame.time.Clock().tick(60)
-
 # Salir de Pygame
 pygame.quit()
