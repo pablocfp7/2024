@@ -1,6 +1,6 @@
 import pygame
 import sys
-
+import random
 
 pygame.init()
 
@@ -11,6 +11,7 @@ pygame.display.set_caption("Animación de Sprites")
 
 
 WHITE = (255, 255, 255)
+BLACK = (0,0,0)
 
 sprite_images = [pygame.image.load(f'sprite_frame_{i}.png') for i in range(1, 6)]
 current_frame = 0
