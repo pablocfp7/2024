@@ -1,13 +1,12 @@
 import pygame
 import sys
-import random
 
 pygame.init()
 
-screen_width = 800
-screen_height = 600
+screen_width = 600
+screen_height = 400
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Animación de Sprites")
+pygame.display.set_caption("Nueva animación de Sprites")
 
 
 WHITE = (255, 255, 255)
