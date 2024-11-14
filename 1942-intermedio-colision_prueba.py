@@ -124,9 +124,8 @@ while not game_over:
         screen.blit(game_over_text, (ANCHO // 2 - game_over_text.get_width() // 2, ALTO // 2 - game_over_text.get_height() // 2))
 
         # Esperar 3 segundos antes de cerrar el juego
-        if pygame.time.get_ticks() - game_over_time > 15000:  # 3000 ms = 3 segundos
+        if pygame.time.get_ticks() - game_over_time > 100000:  # 3000 ms = 3 segundos
             game_over = True  # Esto hará que el bucle termine
-
     pygame.display.flip()
 
 pygame.quit()
