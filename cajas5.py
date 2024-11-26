@@ -27,13 +27,14 @@ class Jugador(pygame.sprite.Sprite):
         self.velocidad = 5
 
     def update(self, teclas):
-        if teclas[pygame.K_LEFT]:
+        # Verificar límites para el jugador
+        if teclas[pygame.K_LEFT] and self.rect.x > 0:
             self.rect.x -= self.velocidad
-        if teclas[pygame.K_RIGHT]:
+        if teclas[pygame.K_RIGHT] and self.rect.x < ANCHO - self.rect.width:
             self.rect.x += self.velocidad
-        if teclas[pygame.K_UP]:
+        if teclas[pygame.K_UP] and self.rect.y > 0:
             self.rect.y -= self.velocidad
-        if teclas[pygame.K_DOWN]:
+        if teclas[pygame.K_DOWN] and self.rect.y < ALTO - self.rect.height:
             self.rect.y += self.velocidad
 
 
@@ -57,36 +58,28 @@ class Obstaculo(pygame.sprite.Sprite):
         self.rect.y = y
 
 
-# Función para mover la caja azul y evitar que atraviese las otras cajas
-def mover_caja_alejada(caja, teclas, obstaculos, cajas):
+# Función para mover las cajas y evitar que atraviesen los obstáculos
+def mover_caja_alejada(caja, teclas, obstaculos):
     if teclas[pygame.K_LEFT]:
-        # Comprobar si la caja azul colide con una caja roja
-        for otra_caja in cajas:
-            if caja.rect.colliderect(otra_caja.rect) and caja.rect.left < otra_caja.rect.right:
-                caja.rect.x = otra_caja.rect.right  # Detener la caja azul en el borde derecho de la caja roja
-                return
-        caja.rect.x -= 5
-
+        if pygame.sprite.spritecollide(caja, obstaculos, False):
+            caja.rect.x += 5  # Mover hacia la derecha
+        else:
+            caja.rect.x -= 5
     if teclas[pygame.K_RIGHT]:
-        for otra_caja in cajas:
-            if caja.rect.colliderect(otra_caja.rect) and caja.rect.right > otra_caja.rect.left:
-                caja.rect.x = otra_caja.rect.left - caja.rect.width  # Detener la caja azul en el borde izquierdo de la caja roja
-                return
-        caja.rect.x += 5
-
+        if pygame.sprite.spritecollide(caja, obstaculos, False):
+            caja.rect.x -= 5  # Mover hacia la izquierda
+        else:
+            caja.rect.x += 5
     if teclas[pygame.K_UP]:
-        for otra_caja in cajas:
-            if caja.rect.colliderect(otra_caja.rect) and caja.rect.top < otra_caja.rect.bottom:
-                caja.rect.y = otra_caja.rect.bottom  # Detener la caja azul en el borde inferior de la caja roja
-                return
-        caja.rect.y -= 5
-
+        if pygame.sprite.spritecollide(caja, obstaculos, False):
+            caja.rect.y += 5  # Mover hacia abajo
+        else:
+            caja.rect.y -= 5
     if teclas[pygame.K_DOWN]:
-        for otra_caja in cajas:
-            if caja.rect.colliderect(otra_caja.rect) and caja.rect.bottom > otra_caja.rect.top:
-                caja.rect.y = otra_caja.rect.top - caja.rect.height  # Detener la caja azul en el borde superior de la caja roja
-                return
-        caja.rect.y += 5
+        if pygame.sprite.spritecollide(caja, obstaculos, False):
+            caja.rect.y -= 5  # Mover hacia arriba
+        else:
+            caja.rect.y += 5
 
 
 # Crear el jugador, las cajas y los obstáculos
@@ -128,7 +121,7 @@ while running:
     # Mover las cajas con el jugador
     for caja in cajas:
         if jugador.rect.colliderect(caja.rect):
-            mover_caja_alejada(caja, teclas, obstaculos, cajas)
+            mover_caja_alejada(caja, teclas, obstaculos)
 
         # Verificar si la caja está dentro de la zona segura
         if zona_segura.colliderect(caja.rect):

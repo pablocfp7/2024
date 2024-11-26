@@ -28,22 +28,27 @@ class Jugador(pygame.sprite.Sprite):
 
     def update(self, teclas, obstaculos):
         # Verificar límites para el movimiento horizontal (izquierda y derecha)
-        if teclas[pygame.K_LEFT] and self.rect.x > 0:
+        if teclas[pygame.K_LEFT] and self.rect.x > 0:  # No se pasa de la izquierda
             self.rect.x -= self.velocidad
-        if teclas[pygame.K_RIGHT] and self.rect.x < ANCHO - self.rect.width:
+            if pygame.sprite.spritecollide(self, obstaculos, False):  # Colisión a la izquierda
+                self.rect.x += self.velocidad  # Deshacer movimiento
+
+        if teclas[pygame.K_RIGHT] and self.rect.x < ANCHO - self.rect.width:  # No se pasa de la derecha
             self.rect.x += self.velocidad
-        
+            if pygame.sprite.spritecollide(self, obstaculos, False):  # Colisión a la derecha
+                self.rect.x -= self.velocidad  # Deshacer movimiento
+
         # Verificar colisión para movimiento hacia abajo (no pasar por debajo de obstáculos)
-        if teclas[pygame.K_DOWN]:
+        if teclas[pygame.K_DOWN] and self.rect.y < ALTO - self.rect.height:  # No se pasa de abajo
             self.rect.y += self.velocidad
-            if pygame.sprite.spritecollide(self, obstaculos, False):
-                self.rect.y -= self.velocidad  # Deshacer movimiento si hay colisión
+            if pygame.sprite.spritecollide(self, obstaculos, False):  # Colisión abajo
+                self.rect.y -= self.velocidad  # Deshacer movimiento
 
         # Verificar colisión para movimiento hacia arriba (no pasar por encima de obstáculos)
-        if teclas[pygame.K_UP]:
+        if teclas[pygame.K_UP] and self.rect.y > 0:  # No se pasa de arriba
             self.rect.y -= self.velocidad
-            if pygame.sprite.spritecollide(self, obstaculos, False):
-                self.rect.y += self.velocidad  # Deshacer movimiento si hay colisión
+            if pygame.sprite.spritecollide(self, obstaculos, False):  # Colisión arriba
+                self.rect.y += self.velocidad  # Deshacer movimiento
 
 
 class Caja(pygame.sprite.Sprite):
