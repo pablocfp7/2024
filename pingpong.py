@@ -1,133 +1,171 @@
 import pygame
 import random
 
-# Inicializamos Pygame
 pygame.init()
 
-# Dimensiones de la pantalla
 ANCHO = 800
 ALTO = 600
 
-# Colores
 BLANCO = (255, 255, 255)
-NEGRO = (0, 0, 0)
-AZUL = (0, 0, 255)
-ROJO = (255, 0, 0)
 
-# Pantalla
-pantalla = pygame.display.set_mode((ANCHO, ALTO))
-pygame.display.set_caption("Ping Pong")
-
-# Velocidad del juego
 FPS = 60
 reloj = pygame.time.Clock()
 
-# Palas
-pala_ancho = 15
-pala_alto = 100
-pala_velocidad = 10
+fuente_puntuacion = pygame.font.SysFont("Arial", 60)
+fuente_mensaje = pygame.font.SysFont("Arial", 70)
 
-# Pelota
-pelota_radio = 10
-pelota_velocidad_x = 7 * random.choice((1, -1))
-pelota_velocidad_y = 7 * random.choice((1, -1))
+fondo_cancha = pygame.image.load("canchadetenis.jpg")
+fondo_cancha = pygame.transform.scale(fondo_cancha, (ANCHO, ALTO))
+imagen_raqueta = pygame.image.load("raqueta izquierda.png")
+imagen_raqueta = pygame.transform.scale(imagen_raqueta, (30, 120))
+pelota_tenis = pygame.image.load("pelotadetenis.png")
+pelota_tenis = pygame.transform.scale(pelota_tenis, (20, 20))
 
-# Posiciones iniciales
-pala_izquierda_y = ALTO // 2 - pala_alto // 2
-pala_derecha_y = ALTO // 2 - pala_alto // 2
-pelota_x = ANCHO // 2
-pelota_y = ALTO // 2
+class Pelota:
+    def __init__(self):
+        self.radio = 10
+        self.x = ANCHO // 2
+        self.y = ALTO // 2
+        self.velocidad_x = 7 * random.choice((1, -1))
+        self.velocidad_y = 7 * random.choice((1, -1))
+        self.aceleracion = 0.1
+        self.vel_max = 15
 
-# Puntuación
-puntos_izquierda = 0
-puntos_derecha = 0
-fuente_puntuacion = pygame.font.SysFont("Arial", 30)
+    def mover(self):
+        self.x += self.velocidad_x
+        self.y += self.velocidad_y
 
-# Función para dibujar los elementos en la pantalla
-def dibujar_elementos():
-    pantalla.fill(NEGRO)  # Fondo negro
-    pygame.draw.rect(pantalla, BLANCO, (50, pala_izquierda_y, pala_ancho, pala_alto))  # Pala izquierda
-    pygame.draw.rect(pantalla, BLANCO, (ANCHO - 50 - pala_ancho, pala_derecha_y, pala_ancho, pala_alto))  # Pala derecha
-    pygame.draw.circle(pantalla, BLANCO, (ANCHO // 2, ALTO // 2), 50, 1)  # Línea central
-    pygame.draw.rect(pantalla, BLANCO, (pelota_x - pelota_radio, pelota_y - pelota_radio, pelota_radio * 2, pelota_radio * 2))  # Pelota
+        if self.y - self.radio <= 0 or self.y + self.radio >= ALTO:
+            self.velocidad_y = -self.velocidad_y
+            self.acelerar()
 
-    # Mostrar la puntuación
-    texto_puntos_izquierda = fuente_puntuacion.render(str(puntos_izquierda), True, BLANCO)
-    pantalla.blit(texto_puntos_izquierda, (ANCHO // 4, 20))
-    texto_puntos_derecha = fuente_puntuacion.render(str(puntos_derecha), True, BLANCO)
-    pantalla.blit(texto_puntos_derecha, (ANCHO * 3 // 4 - texto_puntos_derecha.get_width(), 20))
+    def colision_pala(self, pala):
+        if pala.x <= self.x + self.radio <= pala.x + pala.ancho and pala.y <= self.y <= pala.y + pala.alto:
+            self.velocidad_x = -self.velocidad_x
+            pala.golpear()
+            self.acelerar()
 
-# Función para mover la pelota
-def mover_pelota():
-    global pelota_x, pelota_y, pelota_velocidad_x, pelota_velocidad_y, puntos_izquierda, puntos_derecha
+    def reiniciar(self):
+        self.x = ANCHO // 2
+        self.y = ALTO // 2
+        self.velocidad_x = 6.1 * random.choice((1, -1))
+        self.velocidad_y = 6.1 * random.choice((1, -1))
 
-    pelota_x += pelota_velocidad_x
-    pelota_y += pelota_velocidad_y
+    def acelerar(self):
+        if abs(self.velocidad_x) < self.vel_max:
+            self.velocidad_x += self.aceleracion * (1 if self.velocidad_x > 0 else -1)
+        if abs(self.velocidad_y) < self.vel_max:
+            self.velocidad_y += self.aceleracion * (1 if self.velocidad_y > 0 else -1)
 
-    # Colisiones con el borde superior e inferior
-    if pelota_y - pelota_radio <= 0 or pelota_y + pelota_radio >= ALTO:
-        pelota_velocidad_y = -pelota_velocidad_y
+    def dibujar(self, pantalla):
+        pantalla.blit(pelota_tenis, (self.x - self.radio, self.y - self.radio))
 
-    # Colisiones con las palas
-    if pelota_x - pelota_radio <= 50 + pala_ancho and pala_izquierda_y < pelota_y < pala_izquierda_y + pala_alto:
-        pelota_velocidad_x = -pelota_velocidad_x
+class Pala:
+    def __init__(self, x):
+        self.ancho = 30
+        self.alto = 120
+        self.x = x
+        self.y = ALTO // 2 - self.alto // 2
+        self.velocidad = 10
+        self.golpeando = False
+        self.angulo = 0
 
-    if pelota_x + pelota_radio >= ANCHO - 50 - pala_ancho and pala_derecha_y < pelota_y < pala_derecha_y + pala_alto:
-        pelota_velocidad_x = -pelota_velocidad_x
+    def mover(self, direccion):
+        if direccion == "arriba" and self.y > 0:
+            self.y -= self.velocidad
+        elif direccion == "abajo" and self.y < ALTO - self.alto:
+            self.y += self.velocidad
 
-    # Si la pelota sale por la izquierda o la derecha, se puntúa
-    if pelota_x - pelota_radio <= 0:
-        puntos_derecha += 1
-        reiniciar_pelota()
+    def golpear(self):
+        self.golpeando = True
 
-    if pelota_x + pelota_radio >= ANCHO:
-        puntos_izquierda += 1
-        reiniciar_pelota()
+    def animar_golpe(self):
+        if self.golpeando:
+            self.angulo = -30
+            self.golpeando = False
+        else:
+            if self.angulo < 0:
+                self.angulo += 5
 
-# Función para reiniciar la pelota al centro
-def reiniciar_pelota():
-    global pelota_x, pelota_y, pelota_velocidad_x, pelota_velocidad_y
-    pelota_x = ANCHO // 2
-    pelota_y = ALTO // 2
-    pelota_velocidad_x = 7 * random.choice((1, -1))
-    pelota_velocidad_y = 7 * random.choice((1, -1))
+    def dibujar(self, pantalla):
+        self.animar_golpe()
+        raqueta_rotada = pygame.transform.rotate(imagen_raqueta, self.angulo)
+        pantalla.blit(raqueta_rotada, (self.x, self.y))
 
-# Función principal del juego
+class PingPong:
+    def __init__(self):
+        self.puntos_izquierda = 0
+        self.puntos_derecha = 0
+        self.pala_izquierda = Pala(50)
+        self.pala_derecha = Pala(ANCHO - 80)
+        self.pelota = Pelota()
+
+    def dibujar_elementos(self, pantalla):
+        pantalla.blit(fondo_cancha, (0, 0))
+
+        self.pala_izquierda.dibujar(pantalla)
+        self.pala_derecha.dibujar(pantalla)
+        self.pelota.dibujar(pantalla)
+        pygame.draw.line(pantalla, BLANCO, (ANCHO // 2, 0), (ANCHO // 2, ALTO), 2)
+        texto_puntos_izquierda = fuente_puntuacion.render(str(self.puntos_izquierda), True, BLANCO)
+        pantalla.blit(texto_puntos_izquierda, (ANCHO // 4, 20))
+        texto_puntos_derecha = fuente_puntuacion.render(str(self.puntos_derecha), True, BLANCO)
+        pantalla.blit(texto_puntos_derecha, (ANCHO * 3 // 4 - texto_puntos_derecha.get_width(), 20))
+
+    def mover_elementos(self):
+        self.pelota.mover()
+        self.pelota.colision_pala(self.pala_izquierda)
+        self.pelota.colision_pala(self.pala_derecha)
+        if self.pelota.x - self.pelota.radio <= 0:
+            self.puntos_derecha += 1
+            self.pelota.reiniciar()
+
+        if self.pelota.x + self.pelota.radio >= ANCHO:
+            self.puntos_izquierda += 1
+            self.pelota.reiniciar()
+
+    def mover_paletas(self):
+        teclas = pygame.key.get_pressed()
+        if teclas[pygame.K_w]:
+            self.pala_izquierda.mover("arriba")
+        if teclas[pygame.K_s]:
+            self.pala_izquierda.mover("abajo")
+        if self.pala_derecha.y + self.pala_derecha.alto // 2 < self.pelota.y:
+            self.pala_derecha.mover("abajo")
+        elif self.pala_derecha.y + self.pala_derecha.alto // 2 > self.pelota.y:
+            self.pala_derecha.mover("arriba")
+
+    def mostrar_ganador(self, pantalla, mensaje):
+        texto_ganador = fuente_mensaje.render(mensaje, True, BLANCO)
+        pantalla.blit(texto_ganador,
+                      (ANCHO // 2 - texto_ganador.get_width() // 2, ALTO // 2 - texto_ganador.get_height() // 2))
+        pygame.display.update()
+        pygame.time.wait(2000)
+
 def juego():
-    global pala_izquierda_y, pala_derecha_y
+    pantalla = pygame.display.set_mode((ANCHO, ALTO))
+    pygame.display.set_caption("Ping Pong")
 
+    ping_pong = PingPong()
     jugando = True
+
     while jugando:
         reloj.tick(FPS)
-
-        # Manejo de eventos
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 jugando = False
+        if ping_pong.puntos_izquierda >= 21:
+            ping_pong.mostrar_ganador(pantalla, "¡Jugador Izquierda Gana!")
+            break
+        elif ping_pong.puntos_derecha >= 21:
+            ping_pong.mostrar_ganador(pantalla, "¡Computadora Gana!")
+            break
 
-        # Movimiento de las palas (usando las teclas de arriba y abajo)
-        teclas = pygame.key.get_pressed()
-        if teclas[pygame.K_w] and pala_izquierda_y > 0:
-            pala_izquierda_y -= pala_velocidad
-        if teclas[pygame.K_s] and pala_izquierda_y < ALTO - pala_alto:
-            pala_izquierda_y += pala_velocidad
-
-        if teclas[pygame.K_UP] and pala_derecha_y > 0:
-            pala_derecha_y -= pala_velocidad
-        if teclas[pygame.K_DOWN] and pala_derecha_y < ALTO - pala_alto:
-            pala_derecha_y += pala_velocidad
-
-        # Mover la pelota
-        mover_pelota()
-
-        # Dibujar todos los elementos
-        dibujar_elementos()
-
-        # Actualizar la pantalla
+        ping_pong.mover_paletas()
+        ping_pong.mover_elementos()
+        ping_pong.dibujar_elementos(pantalla)
         pygame.display.update()
 
-    # Salir del juego
     pygame.quit()
 
-# Ejecutar el juego
 juego()
